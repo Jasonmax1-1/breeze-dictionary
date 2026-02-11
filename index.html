@@ -868,9 +868,26 @@
             html += '<p>' + tipText + '</p>';
             html += '</div>';
             
+            // 添加问AI功能
+            const wordEscaped = escapeHtml(word);
+            const aiTitle = currentLang === 'zh' ? '问AI' : 'Ask AI';
+            const aiPlaceholder = currentLang === 'zh' ? '询问关于这个单词的更多信息...' : 'Ask anything about this word...';
+            const aiButtonText = currentLang === 'zh' ? '提问' : 'Ask';
+            html += '<div class="ai-section">';
+            html += '<h3>' + aiTitle + '</h3>';
+            html += '<div class="ai-input-container">';
+            html += '<input type="text" id="ai-question" placeholder="' + aiPlaceholder + '" class="ai-input" data-word="' + wordEscaped + '">';
+            html += '<button id="ai-submit-btn" class="ai-btn" disabled>' + aiButtonText + '</button>';
+            html += '</div>';
+            html += '<div id="ai-response" class="ai-response"></div>';
+            html += '</div>';
+            
             html += '</div>';
             
             resultDiv.innerHTML = html;
+            
+            // 初始化问AI功能的事件监听
+            initAIEventListeners();
         }
         
         // 播放发音
