@@ -676,17 +676,8 @@
                         }
                         return response.json();
                     }),
-                // 获取中文释义（使用Mymemory翻译API）
-                fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-CN`)
-                    .then(response => {
-                        if (!response.ok) {
-                            return { responseData: { translatedText: '' } };
-                        }
-                        return response.json();
-                    })
-                    .catch(() => {
-                        return { responseData: { translatedText: '' } };
-                    })
+                // 获取中文释义（使用多个翻译API作为备用）
+                fetchWithFallback(word)
             ])
             .then(([englishData, chineseData]) => {
                 displayResult(englishData, chineseData);
@@ -694,6 +685,38 @@
             .catch(error => {
                 resultDiv.innerHTML = `<div class="error">${error.message}</div>`;
             });
+        }
+        
+        // 多翻译源备用函数
+        async function fetchWithFallback(word) {
+            // 第一个翻译源：MyMemory
+            try {
+                const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-CN`);
+                const data = await response.json();
+                if (data.responseData && data.responseData.translatedText && 
+                    data.responseData.translatedText.toLowerCase() !== word.toLowerCase()) {
+                    return data;
+                }
+            } catch (e) {
+                // 继续尝试下一个
+            }
+            
+            // 第二个翻译源：使用 Google Translate API（通过第三方服务）
+            try {
+                const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=zh-CN&dt=t&q=${encodeURIComponent(word)}`);
+                const data = await response.json();
+                if (data && data[0] && data[0][0] && data[0][0][0]) {
+                    const translatedText = data[0][0][0];
+                    if (translatedText.toLowerCase() !== word.toLowerCase()) {
+                        return { responseData: { translatedText: translatedText } };
+                    }
+                }
+            } catch (e) {
+                // 继续尝试下一个
+            }
+            
+            // 如果都失败了，返回空
+            return { responseData: { translatedText: '' } };
         }
         
         // 转义HTML特殊字符
