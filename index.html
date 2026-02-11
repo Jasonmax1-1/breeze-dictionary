@@ -656,7 +656,7 @@
         });
         
         function searchWord() {
-            const word = document.getElementById('word-input').value.trim();
+            const word = document.getElementById('word-input').value.trim().toLowerCase();
             const resultDiv = document.getElementById('result');
             
             if (!word) {
