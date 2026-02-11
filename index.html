@@ -975,21 +975,18 @@
             if (!input || !btn) return;
             
             const word = input.getAttribute('data-word');
+            let hasScrolled = false;
             
-            // 输入监听 - 控制按钮启用/禁用，并自动滚动
+            // 输入监听 - 控制按钮启用/禁用
             input.addEventListener('input', function() {
                 btn.disabled = this.value.trim() === '';
-                
-                // 当开始输入时，自动滚动到问AI区域
-                if (this.value.trim() !== '' && aiSection) {
-                    aiSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
             });
             
-            // 输入框获得焦点时也滚动到可视区域
+            // 输入框获得焦点时滚动到可视区域（只滚动一次）
             input.addEventListener('focus', function() {
-                if (aiSection) {
+                if (aiSection && !hasScrolled) {
                     aiSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    hasScrolled = true;
                 }
             });
             
