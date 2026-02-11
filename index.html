@@ -672,15 +672,23 @@
                 fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`)
                     .then(response => {
                         if (!response.ok) {
-                            throw new Error('单词未找到');
+                            // 如果词典API找不到，返回null，后面会尝试用翻译API
+                            return null;
                         }
                         return response.json();
-                    }),
+                    })
+                    .catch(() => null),
                 // 获取中文释义（使用多个翻译API作为备用）
                 fetchWithFallback(word)
             ])
             .then(([englishData, chineseData]) => {
-                displayResult(englishData, chineseData);
+                if (englishData) {
+                    // 词典API找到了单词
+                    displayResult(englishData, chineseData);
+                } else {
+                    // 词典API没找到，尝试用翻译API显示基本信息
+                    displayTranslatedResult(word, chineseData);
+                }
             })
             .catch(error => {
                 resultDiv.innerHTML = `<div class="error">${error.message}</div>`;
@@ -818,6 +826,51 @@
             }
             
             return html;
+        }
+        
+        // 显示翻译结果（当词典API找不到单词时）
+        function displayTranslatedResult(word, chineseData) {
+            const resultDiv = document.getElementById('result');
+            
+            let html = '<div class="word-info">';
+            html += '<h2>' + escapeHtml(word) + '</h2>';
+            
+            // 添加发音按钮
+            const ukLabel = currentLang === 'zh' ? '英音' : 'UK';
+            const usLabel = currentLang === 'zh' ? '美音' : 'US';
+            html += '<div class="phonetic">';
+            html += '<button onclick="playAudio(\'' + escapeHtml(word) + '\', \'uk\')" class="audio-btn">' + ukLabel + '</button>';
+            html += '<button onclick="playAudio(\'' + escapeHtml(word) + '\', \'us\')" class="audio-btn">' + usLabel + '</button>';
+            html += '</div>';
+            
+            // 添加中文翻译
+            const chineseTitle = currentLang === 'zh' ? '中文翻译' : 'Chinese Translation';
+            html += '<div class="meaning">';
+            html += '<h3>' + chineseTitle + '</h3>';
+            html += '<ul>';
+            
+            if (chineseData && chineseData.responseData && chineseData.responseData.translatedText) {
+                const translatedText = chineseData.responseData.translatedText;
+                html += '<li>' + escapeHtml(translatedText) + '</li>';
+            } else {
+                const notFoundText = currentLang === 'zh' ? '暂无翻译' : 'No translation available';
+                html += '<li>' + notFoundText + '</li>';
+            }
+            
+            html += '</ul>';
+            html += '</div>';
+            
+            // 添加提示信息
+            const tipText = currentLang === 'zh' 
+                ? '该单词可能是专有名词或未被词典收录，已使用翻译服务提供释义。' 
+                : 'This word may be a proper noun or not in the dictionary. Translation service has been used.';
+            html += '<div class="meaning" style="color: #666; font-size: 0.9rem;">';
+            html += '<p>' + tipText + '</p>';
+            html += '</div>';
+            
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
         }
         
         // 播放发音
